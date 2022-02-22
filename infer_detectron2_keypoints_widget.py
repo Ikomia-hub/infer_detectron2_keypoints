@@ -49,7 +49,7 @@ class InferDetectron2KeypointsWidget(core.CWorkflowTaskWidget):
             for name in files:
                 file_path = os.path.join(root, name)
                 possible_cfg = os.path.join(*file_path.split('/')[-2:])
-                if "Keypoints" in possible_cfg and possible_cfg.endswith('.yaml'):
+                if "Keypoints" in possible_cfg and possible_cfg.endswith('.yaml') and "Base" not in possible_cfg:
                     available_cfg.append(possible_cfg.replace('.yaml', ''))
         self.combo_model = pyqtutils.append_combo(self.gridLayout, "Model Name")
         for model_name in available_cfg:
