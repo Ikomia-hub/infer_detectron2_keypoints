@@ -21,7 +21,7 @@ import copy
 # Your imports below
 from detectron2 import model_zoo
 from detectron2.engine import DefaultPredictor
-from detectron2.config import get_cfg
+from detectron2.config import get_cfg, CfgNode
 from detectron2.data import MetadataCatalog
 import numpy as np
 import torch
@@ -42,6 +42,9 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
         self.conf_kp_thres = 0.05
         self.cuda = True if torch.cuda.is_available() else False
         self.update = False
+        self.custom = False
+        self.cfg_file = ""
+        self.weights = ""
 
     def setParamMap(self, param_map):
         # Set parameters values from Ikomia application
@@ -50,6 +53,9 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
         self.conf_det_thres = float(param_map["conf_det_thres"])
         self.conf_kp_thres = float(param_map["conf_kp_thres"])
         self.cuda = eval(param_map["cuda"])
+        self.custom = eval(param_map["custom"])
+        self.cfg_file = param_map["cfg_file"]
+        self.weights = param_map["weights"]
 
     def getParamMap(self):
         # Send parameters values to Ikomia application
@@ -59,6 +65,9 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
         param_map["conf_det_thres"] = str(self.conf_det_thres)
         param_map["conf_kp_thres"] = str(self.conf_kp_thres)
         param_map["cuda"] = str(self.cuda)
+        param_map["custom"] = str(self.custom)
+        param_map["cfg_file"] = self.cfg_file
+        param_map["weights"] = self.weights
         return param_map
 
 
@@ -104,16 +113,27 @@ class InferDetectron2Keypoints(dataprocess.C2dImageTask):
         # Get parameters :
         param = self.getParam()
         if self.predictor is None or param.update:
-            self.cfg = get_cfg()
-            self.cfg.merge_from_file(model_zoo.get_config_file(param.model_name + '.yaml'))
+            if param.custom:
+                with open(param.cfg_file, 'r') as file:
+                    cfg_data = file.read()
+                    self.cfg = CfgNode.load_cfg(cfg_data)
+                self.connections = self.cfg.KEYPOINT_CONNECTION_RULES
+                self.cfg.MODEL.WEIGHTS = param.weights
+                self.name2id = {k: v for v, k in enumerate(self.cfg.KEYPOINT_NAMES)}
+            else:
+                self.cfg = get_cfg()
+                self.cfg.merge_from_file(model_zoo.get_config_file(param.model_name + '.yaml'))
+                self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(param.model_name + '.yaml')
+                self.cfg.MODEL.DEVICE = 'cuda' if param.cuda else 'cpu'
+                self.name2id = {k: v for v, k in
+                                enumerate(MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_names"))}
+                self.connections = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_connection_rules")
+                self.predictor = DefaultPredictor(self.cfg)
+
             self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = param.conf_det_thres
-            self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(param.model_name + '.yaml')
-            self.cfg.MODEL.DEVICE = 'cuda' if param.cuda else 'cpu'
-            self.name2id = {k: v for v, k in
-                            enumerate(MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_names"))}
-            self.connections = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_connection_rules")
-            self.predictor = DefaultPredictor(self.cfg)
             self.kp_thres = param.conf_kp_thres
+            self.predictor = DefaultPredictor(self.cfg)
+
             param.update = False
             print("Inference will run on " + ('cuda' if param.cuda else 'cpu'))
 

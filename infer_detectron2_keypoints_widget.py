@@ -34,16 +34,13 @@ class InferDetectron2KeypointsWidget(core.CWorkflowTaskWidget):
 
     def __init__(self, param, parent):
         core.CWorkflowTaskWidget.__init__(self, parent)
-
         if param is None:
             self.parameters = InferDetectron2KeypointsParam()
         else:
             self.parameters = param
-
         # Create layout : QGridLayout by default
         self.gridLayout = QGridLayout()
         config_paths = os.path.dirname(detectron2.__file__) + "/model_zoo"
-
         available_cfg = []
         for root, dirs, files in os.walk(config_paths, topdown=False):
             for name in files:
@@ -55,7 +52,6 @@ class InferDetectron2KeypointsWidget(core.CWorkflowTaskWidget):
         for model_name in available_cfg:
             self.combo_model.addItem(model_name)
         self.combo_model.setCurrentText(self.parameters.model_name)
-
         self.double_spin_det_thres = pyqtutils.append_double_spin(self.gridLayout, "Detection confidence threshold",
                                                                   self.parameters.conf_det_thres, min=0., max=1.,
                                                                   step=1e-2, decimals=2)
@@ -63,22 +59,33 @@ class InferDetectron2KeypointsWidget(core.CWorkflowTaskWidget):
                                                                  self.parameters.conf_kp_thres, min=0., max=1.,
                                                                  step=1e-2, decimals=2)
         self.check_cuda = pyqtutils.append_check(self.gridLayout, "Cuda", self.parameters.cuda)
-
+        self.check_custom_model = pyqtutils.append_check(self.gridLayout, "Custom model", self.parameters.custom)
+        self.browse_cfg = pyqtutils.append_browse_file(self.gridLayout, "Config file (.yaml)", self.parameters.cfg_file)
+        self.browse_weights = pyqtutils.append_browse_file(self.gridLayout, "Weights file (.pth)",
+                                                           self.parameters.weights)
+        self.check_custom_model.setChecked(self.parameters.custom)
+        self.browse_cfg.setEnabled(self.check_custom_model.isChecked())
+        self.browse_weights.setEnabled(self.check_custom_model.isChecked())
+        self.check_custom_model.stateChanged.connect(self.on_check_custom)
         # PyQt -> Qt wrapping
         layout_ptr = qtconversion.PyQtToQt(self.gridLayout)
-
         # Set widget layout
         self.setLayout(layout_ptr)
 
+    def on_check_custom(self, int):
+        self.browse_cfg.setEnabled(self.check_custom_model.isChecked())
+        self.browse_weights.setEnabled(self.check_custom_model.isChecked())
+
     def onApply(self):
         # Apply button clicked slot
-
         self.parameters.conf_det_thres = self.double_spin_det_thres.value()
         self.parameters.conf_kp_thres = self.double_spin_kp_thres.value()
         self.parameters.model_name = self.combo_model.currentText()
         self.parameters.cuda = self.check_cuda.isChecked()
         self.parameters.update = True
-
+        self.parameters.custom = self.check_custom_model.isChecked()
+        self.parameters.cfg_file = self.browse_cfg.path
+        self.parameters.weights = self.browse_weights.path
         # Send signal to launch the process
         self.emitApply(self.parameters)
 
