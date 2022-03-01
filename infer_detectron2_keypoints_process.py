@@ -137,12 +137,11 @@ class InferDetectron2Keypoints(dataprocess.C2dImageTask):
             param.update = False
             print("Inference will run on " + ('cuda' if param.cuda else 'cpu'))
 
-            # displaying multiple tables doesn't work yet
-            """connection_rules_output = self.getOutput(3)
+            connection_rules_output = self.getOutput(3)
             starting_kp = ["%s:%d" %(name1,self.name2id[name1]) for name1, name2, color in self.connections]
             ending_kp = ["%s:%d" %(name2,self.name2id[name2]) for name1, name2, color in self.connections]
             connection_rules_output.addValueList(starting_kp,"Starting point")
-            connection_rules_output.addValueList(ending_kp,"Ending point")"""
+            connection_rules_output.addValueList(ending_kp,"Ending point")
 
 
         # Examples :
