@@ -256,7 +256,7 @@ class InferDetectron2KeypointsFactory(dataprocess.CTaskFactory):
         self.info.shortDescription = "Inference for Detectron2 keypoint models"
         self.info.description = "Inference for Detectron2 keypoint models"
         # relative path -> as displayed in Ikomia application process tree
-        self.info.path = "Plugins/Python"
+        self.info.path = "Plugins/Python/Pose"
         self.info.version = "1.0.0"
         self.info.iconPath = "icons/detectron2.png"
         self.info.authors = "Yuxin Wu, Alexander Kirillov, Francisco Massa, Wan-Yen Lo, Ross Girshick"
