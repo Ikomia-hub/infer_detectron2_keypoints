@@ -18,12 +18,12 @@
 
 from ikomia import core, dataprocess
 import copy
-# Your imports below
+import os
+import detectron2
 from detectron2 import model_zoo
 from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg, CfgNode
 from detectron2.data import MetadataCatalog
-import numpy as np
 import torch
 from ikomia.core import CPointF
 
@@ -79,9 +79,6 @@ class InferDetectron2Keypoints(dataprocess.C2dImageTask):
 
     def __init__(self, name, param):
         dataprocess.C2dImageTask.__init__(self, name)
-        # Add input/output of the process here
-        # Example :  self.addInput(dataprocess.CImageIO())
-        #           self.addOutput(dataprocess.CImageIO())
         self.predictor = None
         self.cfg = None
         self.name2id = None
@@ -122,7 +119,9 @@ class InferDetectron2Keypoints(dataprocess.C2dImageTask):
                 self.name2id = {k: v for v, k in enumerate(self.cfg.KEYPOINT_NAMES)}
             else:
                 self.cfg = get_cfg()
-                self.cfg.merge_from_file(model_zoo.get_config_file(param.model_name + '.yaml'))
+                config_path = os.path.join(os.path.dirname(detectron2.__file__), "model_zoo", "configs",
+                                           param.model_name + '.yaml')
+                self.cfg.merge_from_file(config_path)
                 self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(param.model_name + '.yaml')
                 self.cfg.MODEL.DEVICE = 'cuda' if param.cuda else 'cpu'
                 self.name2id = {k: v for v, k in
@@ -140,11 +139,9 @@ class InferDetectron2Keypoints(dataprocess.C2dImageTask):
             connection_rules_output = self.getOutput(3)
             starting_kp = ["%s:%d" %(name1,self.name2id[name1]) for name1, name2, color in self.connections]
             ending_kp = ["%s:%d" %(name2,self.name2id[name2]) for name1, name2, color in self.connections]
-            connection_rules_output.addValueList(starting_kp,"Starting point")
-            connection_rules_output.addValueList(ending_kp,"Ending point")
+            connection_rules_output.addValueList(starting_kp, "Starting point")
+            connection_rules_output.addValueList(ending_kp, "Ending point")
 
-
-        # Examples :
         # Get input :
         input = self.getInput(0)
 
