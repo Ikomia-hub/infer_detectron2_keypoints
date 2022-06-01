@@ -26,6 +26,7 @@ from detectron2.config import get_cfg, CfgNode
 from detectron2.data import MetadataCatalog
 import torch
 from ikomia.core import CPointF
+from distutils.util import strtobool
 
 
 # --------------------
@@ -56,6 +57,7 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
         self.custom = eval(param_map["custom"])
         self.cfg_file = param_map["cfg_file"]
         self.weights = param_map["weights"]
+        self.update = strtobool[param_map["update"]]
 
     def getParamMap(self):
         # Send parameters values to Ikomia application
@@ -68,6 +70,7 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
         param_map["custom"] = str(self.custom)
         param_map["cfg_file"] = self.cfg_file
         param_map["weights"] = self.weights
+        param_map["update"] = str(self.update)
         return param_map
 
 
