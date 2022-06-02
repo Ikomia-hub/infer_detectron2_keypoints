@@ -57,7 +57,7 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
         self.custom = eval(param_map["custom"])
         self.cfg_file = param_map["cfg_file"]
         self.weights = param_map["weights"]
-        self.update = strtobool[param_map["update"]]
+        self.update = strtobool(param_map["update"])
 
     def getParamMap(self):
         # Send parameters values to Ikomia application
