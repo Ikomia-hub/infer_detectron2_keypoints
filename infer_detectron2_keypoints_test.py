@@ -4,6 +4,8 @@ import os
 import yaml
 import cv2
 import detectron2
+from ikomia.utils.tests import run_for_test
+from detectron2 import model_zoo
 
 
 def test(t, data_dict):
@@ -18,9 +20,13 @@ def test(t, data_dict):
             file_path = os.path.join(root, name)
             possible_cfg = os.path.join(*file_path.split('/')[-2:])
             if "Keypoints" in possible_cfg and possible_cfg.endswith('.yaml') and "Base" not in possible_cfg:
+                try:
+                    model_zoo.get_checkpoint_url(possible_cfg)
+                except RuntimeError:
+                    continue
                 params = task.get_parameters(t)
                 params["model_name"] = possible_cfg.replace('.yaml', '')
                 # without update = 1, model is not updated between 2 test
                 params["update"] = 1
                 task.set_parameters(t, params)
-                t.run()
+                yield run_for_test(t)
