@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from infer_detectron2_keypoints import update_path
 from ikomia import core, dataprocess
 import copy
 import os
@@ -257,7 +258,7 @@ class InferDetectron2KeypointsFactory(dataprocess.CTaskFactory):
         self.info.description = "Inference for Detectron2 keypoint models"
         # relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Pose"
-        self.info.version = "1.0.0"
+        self.info.version = "1.0.1"
         self.info.iconPath = "icons/detectron2.png"
         self.info.authors = "Yuxin Wu, Alexander Kirillov, Francisco Massa, Wan-Yen Lo, Ross Girshick"
         self.info.article = "Detectron2"
