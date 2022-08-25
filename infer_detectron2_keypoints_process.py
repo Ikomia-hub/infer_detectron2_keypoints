@@ -125,7 +125,7 @@ class InferDetectron2Keypoints(dataprocess.C2dImageTask):
                 config_path = os.path.join(os.path.dirname(detectron2.__file__), "model_zoo", "configs",
                                            param.model_name + '.yaml')
                 self.cfg.merge_from_file(config_path)
-                self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(param.model_name + '.yaml')
+                self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url((param.model_name + '.yaml').replace('\\', '/'))
                 self.cfg.MODEL.DEVICE = 'cuda' if param.cuda else 'cpu'
                 self.name2id = {k: v for v, k in
                                 enumerate(MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_names"))}

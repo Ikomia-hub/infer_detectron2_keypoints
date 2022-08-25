@@ -46,10 +46,10 @@ class InferDetectron2KeypointsWidget(core.CWorkflowTaskWidget):
         for root, dirs, files in os.walk(config_paths, topdown=False):
             for name in files:
                 file_path = os.path.join(root, name)
-                possible_cfg = os.path.join(*file_path.split('/')[-2:])
+                possible_cfg = os.path.join(*file_path.split(os.path.sep)[-2:])
                 if "Keypoints" in possible_cfg and possible_cfg.endswith('.yaml') and "Base" not in possible_cfg:
                     try:
-                        model_zoo.get_checkpoint_url(possible_cfg)
+                        model_zoo.get_checkpoint_url(possible_cfg.replace('\\', '/'))
                     except RuntimeError:
                         continue
                     available_cfg.append(possible_cfg.replace('.yaml', ''))
