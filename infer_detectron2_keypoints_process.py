@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from infer_detectron2_keypoints import update_path
-from ikomia import core, dataprocess
+from ikomia import utils, core, dataprocess
 import copy
 import os
 import detectron2
@@ -27,7 +27,6 @@ from detectron2.config import get_cfg, CfgNode
 from detectron2.data import MetadataCatalog
 import torch
 from ikomia.core import CPointF
-from distutils.util import strtobool
 
 
 # --------------------
@@ -58,7 +57,7 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
         self.custom = eval(param_map["custom"])
         self.cfg_file = param_map["cfg_file"]
         self.weights = param_map["weights"]
-        self.update = strtobool(param_map["update"])
+        self.update = utils.strtobool(param_map["update"])
 
     def getParamMap(self):
         # Send parameters values to Ikomia application
