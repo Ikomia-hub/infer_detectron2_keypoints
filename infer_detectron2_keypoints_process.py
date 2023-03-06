@@ -26,7 +26,6 @@ from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg, CfgNode
 from detectron2.data import MetadataCatalog
 import torch
-from ikomia.core import CPointF
 
 
 # --------------------
@@ -47,7 +46,7 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
         self.cfg_file = ""
         self.weights = ""
 
-    def setParamMap(self, param_map):
+    def set_values(self, param_map):
         # Set parameters values from Ikomia application
         # Parameters values are stored as string and accessible like a python dict
         self.model_name = param_map["model_name"]
@@ -59,18 +58,17 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
         self.weights = param_map["weights"]
         self.update = utils.strtobool(param_map["update"])
 
-    def getParamMap(self):
+    def get_values(self):
         # Send parameters values to Ikomia application
         # Create the specific dict structure (string container)
-        param_map = core.ParamMap()
-        param_map["model_name"] = self.model_name
-        param_map["conf_det_thres"] = str(self.conf_det_thres)
-        param_map["conf_kp_thres"] = str(self.conf_kp_thres)
-        param_map["cuda"] = str(self.cuda)
-        param_map["custom"] = str(self.custom)
-        param_map["cfg_file"] = self.cfg_file
-        param_map["weights"] = self.weights
-        param_map["update"] = str(self.update)
+        param_map = {"model_name": self.model_name,
+                     "conf_det_thres": str(self.conf_det_thres),
+                     "conf_kp_thres": str(self.conf_kp_thres),
+                     "cuda": str(self.cuda),
+                     "custom": str(self.custom),
+                     "cfg_file": self.cfg_file,
+                     "weights": self.weights,
+                     "update": str(self.update)}
         return param_map
 
 
@@ -78,48 +76,40 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
 # - Class which implements the process
 # - Inherits PyCore.CWorkflowTask or derived from Ikomia API
 # --------------------
-class InferDetectron2Keypoints(dataprocess.C2dImageTask):
+class InferDetectron2Keypoints(dataprocess.CKeypointDetectionTask):
 
     def __init__(self, name, param):
-        dataprocess.C2dImageTask.__init__(self, name)
+        dataprocess.CKeypointDetectionTask.__init__(self, name)
         self.predictor = None
         self.cfg = None
-        self.name2id = None
-        self.connections = None
-        # Add graphics output
-        self.addOutput(dataprocess.CGraphicsOutput())
-        # Add numeric output
-        self.addOutput(dataprocess.CBlobMeasureIO())
-        self.addOutput(dataprocess.CDataStringIO())
+
         # Create parameters class
         if param is None:
-            self.setParam(InferDetectron2KeypointsParam())
+            self.set_param_object(InferDetectron2KeypointsParam())
         else:
-            self.setParam(copy.deepcopy(param))
+            self.set_param_object(copy.deepcopy(param))
 
-    def getProgressSteps(self):
+    def get_progress_steps(self):
         # Function returning the number of progress steps for this process
         # This is handled by the main progress bar of Ikomia application
-        return 1
+        return 2
 
     def run(self):
         # Core function of your process
         # Call beginTaskRun for initialization
-        self.beginTaskRun()
-
-        # Forward input image
-        self.forwardInputImage(0, 0)
+        self.begin_task_run()
 
         # Get parameters :
-        param = self.getParam()
+        param = self.get_param_object()
         if self.predictor is None or param.update:
             if param.custom:
                 with open(param.cfg_file, 'r') as file:
                     cfg_data = file.read()
                     self.cfg = CfgNode.load_cfg(cfg_data)
-                self.connections = self.cfg.KEYPOINT_CONNECTION_RULES
+                connections = self.cfg.KEYPOINT_CONNECTION_RULES
                 self.cfg.MODEL.WEIGHTS = param.weights
-                self.name2id = {k: v for v, k in enumerate(self.cfg.KEYPOINT_NAMES)}
+                name_to_index = {k: v for v, k in enumerate(self.cfg.KEYPOINT_NAMES)}
+                keypoint_names = self.cfg.KEYPOINT_NAMES
             else:
                 self.cfg = get_cfg()
                 config_path = os.path.join(os.path.dirname(detectron2.__file__), "model_zoo", "configs",
@@ -127,45 +117,49 @@ class InferDetectron2Keypoints(dataprocess.C2dImageTask):
                 self.cfg.merge_from_file(config_path)
                 self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url((param.model_name + '.yaml').replace('\\', '/'))
                 self.cfg.MODEL.DEVICE = 'cuda' if param.cuda else 'cpu'
-                self.name2id = {k: v for v, k in
-                                enumerate(MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_names"))}
-                self.connections = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_connection_rules")
+                name_to_index = {k: v for v, k in
+                                 enumerate(MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_names"))}
+                keypoint_names = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_names")
+                connections = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_connection_rules")
                 self.predictor = DefaultPredictor(self.cfg)
 
             self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = param.conf_det_thres
             self.kp_thres = param.conf_kp_thres
             self.predictor = DefaultPredictor(self.cfg)
+            self.set_object_names(["person"])
+            self.set_keypoint_names(list(keypoint_names))
 
+            # Compute keypoint links
+            keypoint_links = []
+            for name1, name2, color in connections:
+                link = dataprocess.CKeypointLink()
+                link.start_point_index = name_to_index[name1]
+                link.end_point_index = name_to_index[name2]
+                link.label = f"{name1} - {name2}"
+                link.color = list(color)
+                keypoint_links.append(link)
+
+            self.set_keypoint_links(keypoint_links)
             param.update = False
             print("Inference will run on " + ('cuda' if param.cuda else 'cpu'))
 
-            connection_rules_output = self.getOutput(3)
-            starting_kp = ["%s:%d" %(name1,self.name2id[name1]) for name1, name2, color in self.connections]
-            ending_kp = ["%s:%d" %(name2,self.name2id[name2]) for name1, name2, color in self.connections]
-            connection_rules_output.addValueList(starting_kp, "Starting point")
-            connection_rules_output.addValueList(ending_kp, "Ending point")
-
         # Get input :
-        input = self.getInput(0)
+        img_input = self.get_input(0)
+        self.emit_step_progress()
 
-        # Get output :
-        graphics_output = self.getOutput(1)
-        numeric_output = self.getOutput(2)
+        if img_input.is_data_available():
+            img = img_input.get_image()
+            self.infer(img)
 
-        if input.isDataAvailable():
-            graphics_output.setNewLayer("Detectron2_Detection")
-            graphics_output.setImageIndex(0)
-            img = input.getImage()
-            numeric_output.clearData()
-            self.infer(img, graphics_output, numeric_output)
         # Step progress bar:
-        self.emitStepProgress()
-
+        self.emit_step_progress()
         # Call endTaskRun to finalize process
-        self.endTaskRun()
+        self.end_task_run()
 
-    def infer(self, img, graphics_output, numeric_output):
+    def infer(self, img):
         outputs = self.predictor(img)
+        obj_id = 0
+
         if "instances" in outputs.keys():
             instances = outputs["instances"].to("cpu")
             boxes = instances.pred_boxes
@@ -176,71 +170,30 @@ class InferDetectron2Keypoints(dataprocess.C2dImageTask):
             for box, score, cls, pred_kp in zip(boxes, scores, classes, pred_keypoints):
                 score = float(score)
                 if score >= self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST:
-                    x1, y1, x2, y2 = box.numpy()
-                    w = float(x2 - x1)
-                    h = float(y2 - y1)
-                    prop_rect = core.GraphicsRectProperty()
-                    prop_rect.pen_color = [255, 0, 0]
-                    graphics_box = graphics_output.addRectangle(float(x1), float(y1), w, h, prop_rect)
-                    # Object results
-                    results = []
-                    confidence_data = dataprocess.CObjectMeasure(
-                        dataprocess.CMeasure(core.MeasureId.CUSTOM, "Confidence"),
-                        score,
-                        graphics_box.getId(),
-                        "person")
-                    box_data = dataprocess.CObjectMeasure(
-                        dataprocess.CMeasure(core.MeasureId.BBOX),
-                        graphics_box.getBoundingRect(),
-                        graphics_box.getId(),
-                        "person")
-
-                    results.append(confidence_data)
-                    results.append(box_data)
-
+                    box_x1, box_y1, box_x2, box_y2 = box.numpy()
+                    w = float(box_x2 - box_x1)
+                    h = float(box_y2 - box_y1)
+                    keypts = []
                     kept_kp_id = []
-                    kept_kp_pos = []
-                    connections_idx = []
-                    for connection_to_do in self.connections:
-                        name_kp1, name_kp2, color = connection_to_do
-                        id_kp1, id_kp2 = self.name2id[name_kp1], self.name2id[name_kp2]
-                        kp1, kp2 = pred_kp[id_kp1], pred_kp[id_kp2]
+
+                    for link in self.get_keypoint_links():
+                        kp1, kp2 = pred_kp[link.start_point_index], pred_kp[link.end_point_index]
                         x1, y1, conf1 = kp1
                         x2, y2, conf2 = kp2
                         cond1 = conf1 >= self.kp_thres
                         cond2 = conf2 >= self.kp_thres
+
                         if cond1 and cond2:
-                            if id_kp1 not in kept_kp_id and cond1:
-                                kept_kp_id.append(id_kp1)
-                                kept_kp_pos.append([float(x1), float(y1)])
-                                graphics_output.addPoint(CPointF(float(x1), float(y1)))
-                            if id_kp2 not in kept_kp_id and cond2:
-                                kept_kp_id.append(id_kp2)
-                                kept_kp_pos.append([float(x2), float(y2)])
-                                graphics_output.addPoint(CPointF(float(x2), float(y2)))
-                            connections_idx.append(id_kp1)
-                            connections_idx.append(id_kp2)
+                            if link.start_point_index not in kept_kp_id and cond1:
+                                kept_kp_id.append(link.start_point_index)
+                                keypts.append((link.start_point_index, dataprocess.CPointF(float(x1), float(y1))))
 
-                            pts = [CPointF(float(x1), float(y1)), CPointF(float(x2), float(y2))]
-                            properties_line = core.GraphicsPolylineProperty()
-                            properties_line.pen_color = [int(c) for c in color]
-                            graphics_output.addPolyline(pts, properties_line)
-                    kp_id_pos = [[idx] + pos for idx, pos in zip(kept_kp_id, kept_kp_pos)]
+                            if link.end_point_index not in kept_kp_id and cond2:
+                                kept_kp_id.append(link.end_point_index)
+                                keypts.append((link.end_point_index, dataprocess.CPointF(float(x2), float(y2))))
 
-                    keypoints_data1 = dataprocess.CObjectMeasure(
-                        dataprocess.CMeasure(core.MeasureId.CUSTOM, "Keypoints id and pos"),
-                        [item for sublist in kp_id_pos for item in sublist],
-                        graphics_box.getId(),
-                        "person")
-
-                    keypoints_data2 = dataprocess.CObjectMeasure(
-                        dataprocess.CMeasure(core.MeasureId.CUSTOM, "Id of linked keypoints"),
-                        connections_idx,
-                        graphics_box.getId(),
-                        "person")
-                    results.append(keypoints_data1)
-                    results.append(keypoints_data2)
-                    numeric_output.addObjectMeasures(results)
+                    self.add_object(obj_id, 0, score, float(box_x1), float(box_y1), w, h, keypts)
+                    obj_id += 1
 
 
 # --------------------
@@ -253,19 +206,19 @@ class InferDetectron2KeypointsFactory(dataprocess.CTaskFactory):
         dataprocess.CTaskFactory.__init__(self)
         # Set process information as string here
         self.info.name = "infer_detectron2_keypoints"
-        self.info.shortDescription = "Inference for Detectron2 keypoint models"
+        self.info.short_description = "Inference for Detectron2 keypoint models"
         self.info.description = "Inference for Detectron2 keypoint models"
         # relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Pose"
         self.info.version = "1.0.1"
-        self.info.iconPath = "icons/detectron2.png"
+        self.info.icon_path = "icons/detectron2.png"
         self.info.authors = "Yuxin Wu, Alexander Kirillov, Francisco Massa, Wan-Yen Lo, Ross Girshick"
         self.info.article = "Detectron2"
         self.info.journal = ""
         self.info.year = 2019
         self.info.license = "Apache License 2.0"
         # URL of documentation
-        self.info.documentationLink = "https://detectron2.readthedocs.io/en/latest/"
+        self.info.documentation_link = "https://detectron2.readthedocs.io/en/latest/"
         # Code source repository
         self.info.repository = "https://github.com/facebookresearch/detectron2"
         # Keywords used for search
