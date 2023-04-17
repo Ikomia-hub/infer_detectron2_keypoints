@@ -42,9 +42,9 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
         self.conf_kp_thres = 0.05
         self.cuda = True if torch.cuda.is_available() else False
         self.update = False
-        self.custom = False
-        self.cfg_file = ""
-        self.weights = ""
+        self.use_custom_model = False
+        self.config = ""
+        self.model_path = ""
 
     def set_values(self, param_map):
         # Set parameters values from Ikomia application
@@ -53,9 +53,9 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
         self.conf_det_thres = float(param_map["conf_det_thres"])
         self.conf_kp_thres = float(param_map["conf_kp_thres"])
         self.cuda = eval(param_map["cuda"])
-        self.custom = eval(param_map["custom"])
-        self.cfg_file = param_map["cfg_file"]
-        self.weights = param_map["weights"]
+        self.use_custom_model = eval(param_map["use_custom_model"])
+        self.config = param_map["config"]
+        self.model_path = param_map["model_path"]
         self.update = utils.strtobool(param_map["update"])
 
     def get_values(self):
@@ -65,9 +65,9 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
                      "conf_det_thres": str(self.conf_det_thres),
                      "conf_kp_thres": str(self.conf_kp_thres),
                      "cuda": str(self.cuda),
-                     "custom": str(self.custom),
-                     "cfg_file": self.cfg_file,
-                     "weights": self.weights,
+                     "use_custom_model": str(self.use_custom_model),
+                     "config": self.config,
+                     "model_path": self.model_path,
                      "update": str(self.update)}
         return param_map
 
@@ -102,12 +102,19 @@ class InferDetectron2Keypoints(dataprocess.CKeypointDetectionTask):
         # Get parameters :
         param = self.get_param_object()
         if self.predictor is None or param.update:
-            if param.custom:
-                with open(param.cfg_file, 'r') as file:
+            if param.model_name_or_path != "":
+                if os.path.isfile(param.model_name_or_path):
+                    param.use_custom_model = True
+                    param.model_path = param.model_name_or_path
+                else:
+                    param.model_name = param.model_name_or_path
+
+            if param.use_custom_model:
+                with open(param.config, 'r') as file:
                     cfg_data = file.read()
                     self.cfg = CfgNode.load_cfg(cfg_data)
                 connections = self.cfg.KEYPOINT_CONNECTION_RULES
-                self.cfg.MODEL.WEIGHTS = param.weights
+                self.cfg.MODEL.WEIGHTS = param.model_path
                 name_to_index = {k: v for v, k in enumerate(self.cfg.KEYPOINT_NAMES)}
                 keypoint_names = self.cfg.KEYPOINT_NAMES
             else:

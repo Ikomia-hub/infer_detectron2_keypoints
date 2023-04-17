@@ -69,13 +69,13 @@ class InferDetectron2KeypointsWidget(core.CWorkflowTaskWidget):
                                                                  self.parameters.conf_kp_thres, min=0., max=1.,
                                                                  step=1e-2, decimals=2)
         self.check_cuda = pyqtutils.append_check(self.grid_layout, "Cuda", self.parameters.cuda)
-        self.check_custom_model = pyqtutils.append_check(self.grid_layout, "Custom model", self.parameters.custom)
-        self.browse_cfg = pyqtutils.append_browse_file(self.grid_layout, "Config file (.yaml)", self.parameters.cfg_file)
-        self.browse_weights = pyqtutils.append_browse_file(self.grid_layout, "Weights file (.pth)",
-                                                           self.parameters.weights)
-        self.check_custom_model.setChecked(self.parameters.custom)
+        self.check_custom_model = pyqtutils.append_check(self.grid_layout, "Custom model", self.parameters.use_custom_model)
+        self.browse_cfg = pyqtutils.append_browse_file(self.grid_layout, "Config file (.yaml)", self.parameters.config)
+        self.browse_model_path = pyqtutils.append_browse_file(self.grid_layout, "Weights file (.pth)",
+                                                           self.parameters.model_path)
+        self.check_custom_model.setChecked(self.parameters.use_custom_model)
         self.browse_cfg.setEnabled(self.check_custom_model.isChecked())
-        self.browse_weights.setEnabled(self.check_custom_model.isChecked())
+        self.browse_model_path.setEnabled(self.check_custom_model.isChecked())
         self.check_custom_model.stateChanged.connect(self.on_check_custom)
         # PyQt -> Qt wrapping
         layout_ptr = qtconversion.PyQtToQt(self.grid_layout)
@@ -84,7 +84,7 @@ class InferDetectron2KeypointsWidget(core.CWorkflowTaskWidget):
 
     def on_check_custom(self, int):
         self.browse_cfg.setEnabled(self.check_custom_model.isChecked())
-        self.browse_weights.setEnabled(self.check_custom_model.isChecked())
+        self.browse_model_path.setEnabled(self.check_custom_model.isChecked())
 
     def on_apply(self):
         # Apply button clicked slot
@@ -93,9 +93,9 @@ class InferDetectron2KeypointsWidget(core.CWorkflowTaskWidget):
         self.parameters.model_name = self.combo_model.currentText()
         self.parameters.cuda = self.check_cuda.isChecked()
         self.parameters.update = True
-        self.parameters.custom = self.check_custom_model.isChecked()
-        self.parameters.cfg_file = self.browse_cfg.path
-        self.parameters.weights = self.browse_weights.path
+        self.parameters.use_custom_model = self.check_custom_model.isChecked()
+        self.parameters.config = self.browse_cfg.path
+        self.parameters.model_path = self.browse_model_path.path
         # Send signal to launch the process
         self.emit_apply(self.parameters)
 
