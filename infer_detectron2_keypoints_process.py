@@ -44,7 +44,7 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
         self.cuda = True if torch.cuda.is_available() else False
         self.update = False
         self.use_custom_model = False
-        self.config = ""
+        self.config_file = ""
         self.model_path = ""
 
     def set_values(self, param_map):
@@ -56,7 +56,7 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
         self.conf_kp_thres = float(param_map["conf_kp_thres"])
         self.cuda = eval(param_map["cuda"])
         self.use_custom_model = eval(param_map["use_custom_model"])
-        self.config = param_map["config"]
+        self.config_file = param_map["config_file"]
         self.model_path = param_map["model_path"]
         self.update = utils.strtobool(param_map["update"])
 
@@ -70,7 +70,7 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
                     "conf_kp_thres": str(self.conf_kp_thres),
                     "cuda": str(self.cuda),
                     "use_custom_model": str(self.use_custom_model),
-                    "config": self.config,
+                    "config_file": self.config_file,
                     "model_path": self.model_path,
                     "update": str(self.update)}
         return param_map
@@ -114,7 +114,7 @@ class InferDetectron2Keypoints(dataprocess.CKeypointDetectionTask):
                     param.model_name = param.model_name_or_path
 
             if param.use_custom_model:
-                with open(param.config, 'r') as file:
+                with open(param.config_file, 'r') as file:
                     cfg_data = file.read()
                     self.cfg = CfgNode.load_cfg(cfg_data)
                 connections = self.cfg.KEYPOINT_CONNECTION_RULES
