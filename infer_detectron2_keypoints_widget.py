@@ -72,7 +72,7 @@ class InferDetectron2KeypointsWidget(core.CWorkflowTaskWidget):
         self.check_custom_model = pyqtutils.append_check(self.grid_layout, "Custom model", self.parameters.use_custom_model)
         self.browse_cfg = pyqtutils.append_browse_file(self.grid_layout, "Config file (.yaml)", self.parameters.config_file)
         self.browse_model_path = pyqtutils.append_browse_file(self.grid_layout, "Weights file (.pth)",
-                                                           self.parameters.model_path)
+                                                           self.parameters.model_weight_file)
         self.check_custom_model.setChecked(self.parameters.use_custom_model)
         self.browse_cfg.setEnabled(self.check_custom_model.isChecked())
         self.browse_model_path.setEnabled(self.check_custom_model.isChecked())
@@ -95,7 +95,7 @@ class InferDetectron2KeypointsWidget(core.CWorkflowTaskWidget):
         self.parameters.update = True
         self.parameters.use_custom_model = self.check_custom_model.isChecked()
         self.parameters.config_file = self.browse_cfg.path
-        self.parameters.model_path = self.browse_model_path.path
+        self.parameters.model_weight_file = self.browse_model_path.path
         # Send signal to launch the process
         self.emit_apply(self.parameters)
 

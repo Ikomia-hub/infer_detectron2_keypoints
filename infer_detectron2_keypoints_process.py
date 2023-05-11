@@ -37,7 +37,6 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
     def __init__(self):
         core.CWorkflowTaskParam.__init__(self)
         # Place default value initialization here
-        self.model_name_or_path = ""
         self.model_name = "COCO-Keypoints/keypoint_rcnn_R_101_FPN_3x"
         self.conf_det_thres = 0.5
         self.conf_kp_thres = 0.05
@@ -45,33 +44,31 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
         self.update = False
         self.use_custom_model = False
         self.config_file = ""
-        self.model_path = ""
+        self.model_weight_file = ""
 
     def set_values(self, param_map):
         # Set parameters values from Ikomia application
         # Parameters values are stored as string and accessible like a python dict
-        self.model_name_or_path = param_map["model_name_or_path"]
         self.model_name = param_map["model_name"]
         self.conf_det_thres = float(param_map["conf_det_thres"])
         self.conf_kp_thres = float(param_map["conf_kp_thres"])
         self.cuda = eval(param_map["cuda"])
         self.use_custom_model = eval(param_map["use_custom_model"])
         self.config_file = param_map["config_file"]
-        self.model_path = param_map["model_path"]
+        self.model_weight_file = param_map["model_weight_file"]
         self.update = utils.strtobool(param_map["update"])
 
     def get_values(self):
         # Send parameters values to Ikomia application
         # Create the specific dict structure (string container)
         param_map = {
-                    "model_name_or_path": str(self.model_name_or_path),
                     "model_name": self.model_name,
                     "conf_det_thres": str(self.conf_det_thres),
                     "conf_kp_thres": str(self.conf_kp_thres),
                     "cuda": str(self.cuda),
                     "use_custom_model": str(self.use_custom_model),
                     "config_file": self.config_file,
-                    "model_path": self.model_path,
+                    "model_weight_file": self.model_weight_file,
                     "update": str(self.update)}
         return param_map
 
@@ -106,19 +103,16 @@ class InferDetectron2Keypoints(dataprocess.CKeypointDetectionTask):
         # Get parameters :
         param = self.get_param_object()
         if self.predictor is None or param.update:
-            if param.model_name_or_path != "":
-                if os.path.isfile(param.model_name_or_path):
+            if param.model_weight_file != "":
+                if os.path.isfile(param.model_weight_file):
                     param.use_custom_model = True
-                    param.model_path = param.model_name_or_path
-                else:
-                    param.model_name = param.model_name_or_path
 
             if param.use_custom_model:
                 with open(param.config_file, 'r') as file:
                     cfg_data = file.read()
                     self.cfg = CfgNode.load_cfg(cfg_data)
                 connections = self.cfg.KEYPOINT_CONNECTION_RULES
-                self.cfg.MODEL.WEIGHTS = param.model_path
+                self.cfg.MODEL.WEIGHTS = param.model_weight_file
                 name_to_index = {k: v for v, k in enumerate(self.cfg.KEYPOINT_NAMES)}
                 keypoint_names = self.cfg.KEYPOINT_NAMES
             else:
