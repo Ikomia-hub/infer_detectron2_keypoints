@@ -35,8 +35,6 @@ pip install ikomia
 
 #### 2. Create your workflow
 
-[Change the sample image URL to fit algorithm purpose]
-
 ```python
 from ikomia.dataprocess.workflow import Workflow
 from ikomia.utils.displayIO import display
