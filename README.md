@@ -19,10 +19,9 @@
     </a> 
 </p>
 
-Inference for Detectron2 keypoint models
+Run keypoints detection models from Detectron2 framework.
 
-[Insert illustrative image here. Image must be accessible publicly, in algorithm Github repository for example.
-<img src="images/illustration.png"  alt="Illustrative image" width="30%" height="30%">]
+![Example image](https://raw.githubusercontent.com/Ikomia-hub/infer_detectron2_keypoints/feat/new_readme/images/rugby-result.jpg)
 
 ## :rocket: Use with Ikomia API
 
@@ -39,17 +38,21 @@ pip install ikomia
 [Change the sample image URL to fit algorithm purpose]
 
 ```python
-import ikomia
 from ikomia.dataprocess.workflow import Workflow
+from ikomia.utils.displayIO import display
 
 # Init your workflow
 wf = Workflow()
 
-# Add algorithm
-algo = wf.add_task(name="infer_detectron2_keypoints", auto_connect=True)
+# Add keypoints detection algorithm
+keypts_detector = wf.add_task(name="infer_detectron2_keypoints", auto_connect=True)
 
-# Run on your image  
-wf.run_on(url="example_image.png")
+# Run the workflow on image
+wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_deepsort/feat/new_readme/images/rugby.jpg")
+
+# Display result
+display(keypts_detector.get_image_with_graphics(), title="Detectron2 keypoints")
+
 ```
 
 ## :sunny: Use with Ikomia Studio
@@ -62,56 +65,58 @@ Ikomia Studio offers a friendly UI with the same features as the API.
 
 ## :pencil: Set algorithm parameters
 
-[Explain each algorithm parameters]
-
-[Change the sample image URL to fit algorithm purpose]
-
 ```python
-import ikomia
-from ikomia.dataprocess.workflow import Workflow
-
-# Init your workflow
-wf = Workflow()
-
 # Add algorithm
 algo = wf.add_task(name="infer_detectron2_keypoints", auto_connect=True)
 
 algo.set_parameters({
-    "param1": "value1",
-    "param2": "value2",
-    ...
+    "model_name": "COCO-Keypoints/keypoint_rcnn_R_101_FPN_3x",
+    "conf_det_thres": "0.5",
+    "conf_kp_thres": "0.05",
+    "cuda": "True",
+    "use_custom_model": "False",
+    "config_file": "",
+    "model_weight_file": "",
 })
 
-# Run on your image  
-wf.run_on(url="example_image.png")
-
+# Run the workflow on image
+wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_deepsort/feat/new_readme/images/rugby.jpg")
 ```
+
+- **model_name** (str, default="COCO-Keypoints/keypoint_rcnn_R_101_FPN_3x"): pre-trained model name. Choose one on the list below:
+    - COCO-Keypoints/keypoint_rcnn_R_50_FPN_1x
+    - COCO-Keypoints/keypoint_rcnn_R_50_FPN_3x
+    - COCO-Keypoints/keypoint_rcnn_R_101_FPN_3x
+    - COCO-Keypoints/keypoint_rcnn_X_101_32x8d_FPN_3x
+- **conf_det_thres** (float, default=0.5): object detection confidence.
+- **conf_kp_thres** (float, default=0.05): keypoints detection confidence.
+- **cuda** (bool, default=True): CUDA acceleration if True, run on CPU otherwise.
+- **use_custom_model** (bool, default=False): flag to enable the custom train model choice.
+- **config_file** (str, default=""): path to model config file (.yaml). Only for custom model.
+- **model_weight_file** (str, default=""): path to model weights file (.pt). Only for custom model.
+
+***Note***: parameter key and value should be in **string format** when added to the dictionary.
 
 ## :mag: Explore algorithm outputs
 
 Every algorithm produces specific outputs, yet they can be explored them the same way using the Ikomia API. For a more in-depth understanding of managing algorithm outputs, please refer to the [documentation](https://ikomia-dev.github.io/python-api-documentation/advanced_guide/IO_management.html).
 
 ```python
-import ikomia
-from ikomia.dataprocess.workflow import Workflow
+# Add keypoints detection algorithm
+keypts_detector = wf.add_task(name="infer_detectron2_keypoints", auto_connect=True)
 
-# Init your workflow
-wf = Workflow()
-
-# Add algorithm
-algo = wf.add_task(name="infer_detectron2_keypoints", auto_connect=True)
-
-# Run on your image  
-wf.run_on(url="example_image.png")
+# Run the workflow on image
+wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_deepsort/feat/new_readme/images/rugby.jpg")
 
 # Iterate over outputs
-for output in algo.get_outputs()
+for output in keypts_detector.get_outputs()
     # Print information
     print(output)
     # Export it to JSON
     output.to_json()
 ```
 
-## :fast_forward: Advanced usage 
+Detectron2 keypoints detection algorithm generates 2 outputs:
 
-[optional]
+1. Forwaded original image (CImageIO)
+2. Keypoints detection output (CKeypointsIO)
