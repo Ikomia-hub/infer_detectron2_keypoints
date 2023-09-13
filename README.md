@@ -46,7 +46,7 @@ wf = Workflow()
 keypts_detector = wf.add_task(name="infer_detectron2_keypoints", auto_connect=True)
 
 # Run the workflow on image
-wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_deepsort/feat/new_readme/images/rugby.jpg")
+wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_detectron2_keypoints/main/images/rugby.jpg")
 
 # Display result
 display(keypts_detector.get_image_with_graphics(), title="Detectron2 keypoints")
@@ -64,6 +64,12 @@ Ikomia Studio offers a friendly UI with the same features as the API.
 ## :pencil: Set algorithm parameters
 
 ```python
+from ikomia.dataprocess.workflow import Workflow
+from ikomia.utils.displayIO import display
+
+# Init your workflow
+wf = Workflow()
+
 # Add algorithm
 algo = wf.add_task(name="infer_detectron2_keypoints", auto_connect=True)
 
@@ -78,7 +84,7 @@ algo.set_parameters({
 })
 
 # Run the workflow on image
-wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_deepsort/feat/new_readme/images/rugby.jpg")
+wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_detectron2_keypoints/main/images/rugby.jpg")
 ```
 
 - **model_name** (str, default="COCO-Keypoints/keypoint_rcnn_R_101_FPN_3x"): pre-trained model name. Choose one on the list below:
@@ -100,11 +106,17 @@ wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_deepsort/feat/
 Every algorithm produces specific outputs, yet they can be explored them the same way using the Ikomia API. For a more in-depth understanding of managing algorithm outputs, please refer to the [documentation](https://ikomia-dev.github.io/python-api-documentation/advanced_guide/IO_management.html).
 
 ```python
+from ikomia.dataprocess.workflow import Workflow
+from ikomia.utils.displayIO import display
+
+# Init your workflow
+wf = Workflow()
+
 # Add keypoints detection algorithm
 keypts_detector = wf.add_task(name="infer_detectron2_keypoints", auto_connect=True)
 
 # Run the workflow on image
-wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_deepsort/feat/new_readme/images/rugby.jpg")
+wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_detectron2_keypoints/main/images/rugby.jpg")
 
 # Iterate over outputs
 for output in keypts_detector.get_outputs()
