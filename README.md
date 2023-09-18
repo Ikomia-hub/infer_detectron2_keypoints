@@ -119,7 +119,7 @@ keypts_detector = wf.add_task(name="infer_detectron2_keypoints", auto_connect=Tr
 wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_detectron2_keypoints/main/images/rugby.jpg")
 
 # Iterate over outputs
-for output in keypts_detector.get_outputs()
+for output in keypts_detector.get_outputs():
     # Print information
     print(output)
     # Export it to JSON
