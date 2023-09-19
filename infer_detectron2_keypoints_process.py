@@ -212,7 +212,6 @@ class InferDetectron2KeypointsFactory(dataprocess.CTaskFactory):
         # Set process information as string here
         self.info.name = "infer_detectron2_keypoints"
         self.info.short_description = "Inference for Detectron2 keypoint models"
-        self.info.description = "Inference for Detectron2 keypoint models"
         # relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Pose"
         self.info.version = "1.0.1"
