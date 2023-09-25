@@ -121,17 +121,17 @@ class InferDetectron2Keypoints(dataprocess.CKeypointDetectionTask):
                 keypoint_names = self.cfg.KEYPOINT_NAMES
             else:
                 self.cfg = get_cfg()
+                dataset_name, config_name = param.model_name.replace(os.path.sep, '/').split('/')
                 config_path = os.path.join(os.path.dirname(detectron2.__file__), "model_zoo", "configs",
-                                           param.model_name + '.yaml')
+                                           dataset_name, config_name + '.yaml')
                 self.cfg.merge_from_file(config_path)
                 self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url((param.model_name + '.yaml').replace('\\', '/'))
-                self.cfg.MODEL.DEVICE = 'cuda' if param.cuda else 'cpu'
                 name_to_index = {k: v for v, k in
                                  enumerate(MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_names"))}
                 keypoint_names = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_names")
                 connections = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_connection_rules")
-                self.predictor = DefaultPredictor(self.cfg)
 
+            self.cfg.MODEL.DEVICE = 'cuda' if param.cuda and torch.cuda.is_available() else 'cpu'
             self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = param.conf_det_thres
             self.kp_thres = param.conf_kp_thres
             self.predictor = DefaultPredictor(self.cfg)
@@ -150,7 +150,7 @@ class InferDetectron2Keypoints(dataprocess.CKeypointDetectionTask):
 
             self.set_keypoint_links(keypoint_links)
             param.update = False
-            print("Inference will run on " + ('cuda' if param.cuda else 'cpu'))
+            print("Inference will run on " + self.cfg.MODEL.DEVICE)
 
         # Get input :
         img_input = self.get_input(0)
