@@ -228,7 +228,8 @@ class InferDetectron2KeypointsFactory(dataprocess.CTaskFactory):
         # URL of documentation
         self.info.documentation_link = "https://detectron2.readthedocs.io/en/latest/"
         # Code source repository
-        self.info.repository = "https://github.com/facebookresearch/detectron2"
+        self.info.repository = "https://github.com/Ikomia-hub/infer_detectron2_keypoints"
+        self.info.original_repository = "https://github.com/facebookresearch/detectron2"
         # Keywords used for search
         self.info.keywords = "infer, detectron2, keypoint, pose"
 
