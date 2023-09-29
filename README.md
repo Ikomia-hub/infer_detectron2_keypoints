@@ -21,7 +21,7 @@
 
 Run keypoints detection models from Detectron2 framework.
 
-![Example image](https://raw.githubusercontent.com/Ikomia-hub/infer_detectron2_keypoints/feat/new_readme/images/rugby-result.jpg)
+![Example image](https://raw.githubusercontent.com/Ikomia-hub/infer_detectron2_keypoints/main/images/rugby-result.jpg)
 
 ## :rocket: Use with Ikomia API
 
