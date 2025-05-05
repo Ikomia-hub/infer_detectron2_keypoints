@@ -62,14 +62,14 @@ class InferDetectron2KeypointsParam(core.CWorkflowTaskParam):
         # Send parameters values to Ikomia application
         # Create the specific dict structure (string container)
         param_map = {
-                    "model_name": self.model_name,
-                    "conf_det_thres": str(self.conf_det_thres),
-                    "conf_kp_thres": str(self.conf_kp_thres),
-                    "cuda": str(self.cuda),
-                    "use_custom_model": str(self.use_custom_model),
-                    "config_file": self.config_file,
-                    "model_weight_file": self.model_weight_file,
-                    "update": str(self.update)}
+            "model_name": self.model_name,
+            "conf_det_thres": str(self.conf_det_thres),
+            "conf_kp_thres": str(self.conf_kp_thres),
+            "cuda": str(self.cuda),
+            "use_custom_model": str(self.use_custom_model),
+            "config_file": self.config_file,
+            "model_weight_file": self.model_weight_file,
+            "update": str(self.update)}
         return param_map
 
 
@@ -104,7 +104,8 @@ class InferDetectron2Keypoints(dataprocess.CKeypointDetectionTask):
         param = self.get_param_object()
 
         # Set cache dir in the algorithm folder to simplify deployment
-        os.environ["FVCORE_CACHE"] = os.path.join(os.path.dirname(__file__), "models")
+        os.environ["FVCORE_CACHE"] = os.path.join(
+            os.path.dirname(__file__), "models")
 
         if self.predictor is None or param.update:
             if param.model_weight_file != "":
@@ -117,19 +118,24 @@ class InferDetectron2Keypoints(dataprocess.CKeypointDetectionTask):
                     self.cfg = CfgNode.load_cfg(cfg_data)
                 connections = self.cfg.KEYPOINT_CONNECTION_RULES
                 self.cfg.MODEL.WEIGHTS = param.model_weight_file
-                name_to_index = {k: v for v, k in enumerate(self.cfg.KEYPOINT_NAMES)}
+                name_to_index = {k: v for v, k in enumerate(
+                    self.cfg.KEYPOINT_NAMES)}
                 keypoint_names = self.cfg.KEYPOINT_NAMES
             else:
                 self.cfg = get_cfg()
-                dataset_name, config_name = param.model_name.replace(os.path.sep, '/').split('/')
+                dataset_name, config_name = param.model_name.replace(
+                    os.path.sep, '/').split('/')
                 config_path = os.path.join(os.path.dirname(detectron2.__file__), "model_zoo", "configs",
                                            dataset_name, config_name + '.yaml')
                 self.cfg.merge_from_file(config_path)
-                self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url((param.model_name + '.yaml').replace('\\', '/'))
+                self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(
+                    (param.model_name + '.yaml').replace('\\', '/'))
                 name_to_index = {k: v for v, k in
                                  enumerate(MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_names"))}
-                keypoint_names = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_names")
-                connections = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0]).get("keypoint_connection_rules")
+                keypoint_names = MetadataCatalog.get(
+                    self.cfg.DATASETS.TRAIN[0]).get("keypoint_names")
+                connections = MetadataCatalog.get(
+                    self.cfg.DATASETS.TRAIN[0]).get("keypoint_connection_rules")
 
             self.cfg.MODEL.DEVICE = 'cuda' if param.cuda and torch.cuda.is_available() else 'cpu'
             self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = param.conf_det_thres
@@ -195,13 +201,16 @@ class InferDetectron2Keypoints(dataprocess.CKeypointDetectionTask):
                         if cond1 and cond2:
                             if link.start_point_index not in kept_kp_id and cond1:
                                 kept_kp_id.append(link.start_point_index)
-                                keypts.append((link.start_point_index, dataprocess.CPointF(float(x1), float(y1))))
+                                keypts.append(
+                                    (link.start_point_index, dataprocess.CPointF(float(x1), float(y1))))
 
                             if link.end_point_index not in kept_kp_id and cond2:
                                 kept_kp_id.append(link.end_point_index)
-                                keypts.append((link.end_point_index, dataprocess.CPointF(float(x2), float(y2))))
+                                keypts.append(
+                                    (link.end_point_index, dataprocess.CPointF(float(x2), float(y2))))
 
-                    self.add_object(obj_id, 0, score, float(box_x1), float(box_y1), w, h, keypts)
+                    self.add_object(obj_id, 0, score, float(
+                        box_x1), float(box_y1), w, h, keypts)
                     obj_id += 1
 
 
@@ -218,7 +227,7 @@ class InferDetectron2KeypointsFactory(dataprocess.CTaskFactory):
         self.info.short_description = "Inference for Detectron2 keypoint models"
         # relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Pose"
-        self.info.version = "1.0.3"
+        self.info.version = "1.0.4"
         self.info.icon_path = "icons/detectron2.png"
         self.info.authors = "Yuxin Wu, Alexander Kirillov, Francisco Massa, Wan-Yen Lo, Ross Girshick"
         self.info.article = "Detectron2"
@@ -230,6 +239,9 @@ class InferDetectron2KeypointsFactory(dataprocess.CTaskFactory):
         # Code source repository
         self.info.repository = "https://github.com/Ikomia-hub/infer_detectron2_keypoints"
         self.info.original_repository = "https://github.com/facebookresearch/detectron2"
+        # Python compatibility
+        self.info.min_python_version = "3.8.0"
+        self.info.min_ikomia_version = "0.13.0"
         # Keywords used for search
         self.info.keywords = "infer, detectron2, keypoint, pose"
         self.info.algo_type = core.AlgoType.INFER
